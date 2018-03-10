@@ -126,8 +126,8 @@ func (self *Service) handleCommand(ev *pubsub.Event) {
 		fields := pubsub.Fields{
 			"device":  dev,
 			"command": command,
-			"level":   d.LightControl[0].Dim,
-			"temp":    d.LightControl[0].Mireds,
+			"level":   tradfri.DimToPercentage(*d.LightControl[0].Dim),
+			"temp":    tradfri.MiredToKelvin(*d.LightControl[0].Mireds),
 		}
 		ack := pubsub.NewEvent("ack", fields)
 		services.Publisher.Emit(ack)
