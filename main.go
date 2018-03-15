@@ -6,7 +6,6 @@ import (
 	"log"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	yaml "gopkg.in/yaml.v1"
@@ -52,15 +51,8 @@ func (self *Service) handleCommand(ev *pubsub.Event) {
 		return
 	}
 
-	var id int
-	group := false
-	if strings.HasPrefix(pids["tradfri"], "G") {
-		group = true
-		id, _ = strconv.Atoi(pids["tradfri"][1:])
-	} else {
-		id, _ = strconv.Atoi(pids["tradfri"])
-	}
-
+	id, _ := strconv.Atoi(pids["tradfri"])
+	group := id&(1<<17) != 0
 	var s string
 
 	ms := 500
@@ -139,7 +131,7 @@ func deviceSource(device *tradfri.DeviceDescription) string {
 }
 
 func groupSource(group *tradfri.GroupDescription) string {
-	return fmt.Sprintf("tradfri.G%d", group.GroupID)
+	return fmt.Sprintf("tradfri.%d", group.GroupID)
 }
 
 func announce(source, name string) {
