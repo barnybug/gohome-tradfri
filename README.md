@@ -1,3 +1,3 @@
 # gohome-tradfri
 
-Gohome Tradfri service
+[Gohome](https://github.com/barnybug/gohome) Tradfri service
