@@ -105,25 +105,21 @@ func (self *Service) handleCommand(ev *pubsub.Event) {
 	if group {
 		log.Printf("Setting group %d to %s\n", id, s)
 		d, _ := self.client.GetGroupDescription(id)
-		fields := pubsub.Fields{
-			"device":  dev,
-			"command": command,
-			"level":   d.Dim,
-		}
-		ack := pubsub.NewEvent("ack", fields)
-		services.Publisher.Emit(ack)
+		groupAck(d)
+		self.groups[id] = d
 	} else {
 		log.Printf("Setting device %d to %s\n", id, s)
 		d, _ := self.client.GetDeviceDescription(id)
-		fields := pubsub.Fields{
-			"device":  dev,
-			"command": command,
-			"level":   tradfri.DimToPercentage(*d.LightControl[0].Dim),
-			"temp":    tradfri.MiredToKelvin(*d.LightControl[0].Mireds),
-		}
-		ack := pubsub.NewEvent("ack", fields)
-		services.Publisher.Emit(ack)
+		deviceAck(d)
+		self.devices[id] = d
 	}
+}
+
+func numCommand(i int) string {
+	if i == 1 {
+		return "on"
+	}
+	return "off"
 }
 
 func deviceSource(device *tradfri.DeviceDescription) string {
@@ -132,6 +128,30 @@ func deviceSource(device *tradfri.DeviceDescription) string {
 
 func groupSource(group *tradfri.GroupDescription) string {
 	return fmt.Sprintf("tradfri.%d", group.GroupID)
+}
+
+func deviceAck(d *tradfri.DeviceDescription) {
+	lc := d.LightControl[0]
+	fields := pubsub.Fields{
+		"source":  deviceSource(d),
+		"command": numCommand(*lc.Power),
+		"level":   tradfri.DimToPercentage(*lc.Dim),
+		"temp":    tradfri.MiredToKelvin(*lc.Mireds),
+	}
+	ack := pubsub.NewEvent("ack", fields)
+	services.Config.AddDeviceToEvent(ack)
+	services.Publisher.Emit(ack)
+}
+
+func groupAck(d *tradfri.GroupDescription) {
+	fields := pubsub.Fields{
+		"source":  groupSource(d),
+		"command": numCommand(d.Power),
+		"level":   d.Dim,
+	}
+	ack := pubsub.NewEvent("ack", fields)
+	services.Config.AddDeviceToEvent(ack)
+	services.Publisher.Emit(ack)
 }
 
 func announce(source, name string) {
@@ -144,32 +164,52 @@ func announce(source, name string) {
 	services.Publisher.Emit(ev)
 }
 
+func deviceChanged(a *tradfri.DeviceDescription, b *tradfri.DeviceDescription) bool {
+	if len(a.LightControl) == 0 || len(b.LightControl) == 0 {
+		// remote control
+		return false
+	}
+	la := a.LightControl[0]
+	lb := b.LightControl[0]
+	return *la.Power != *lb.Power || *la.Dim != *lb.Dim || *la.Mireds != *lb.Mireds
+}
+
 func (self *Service) discover() (int, int) {
-	devices, err := self.client.ListDevices()
+	devices := map[int]*tradfri.DeviceDescription{}
+	groups := map[int]*tradfri.GroupDescription{}
+
+	devicesList, err := self.client.ListDevices()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, device := range devices {
-		self.devices[device.DeviceID] = device
+	for _, device := range devicesList {
+		devices[device.DeviceID] = device
 		source := deviceSource(device)
-		log.Printf("Announcing device: %s %s", source, device.DeviceName)
 		announce(source, device.DeviceName)
+		if d, ok := self.devices[device.DeviceID]; ok && deviceChanged(d, device) {
+			// update device state if changed externally (ie remote)
+			log.Printf("Device %s changed", source)
+			deviceAck(device)
+		}
 	}
 
-	groups, err := self.client.ListGroups()
+	groupsList, err := self.client.ListGroups()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, group := range groups {
-		self.groups[group.GroupID] = group
+	for _, group := range groupsList {
+		groups[group.GroupID] = group
 		source := groupSource(group)
 		if _, ok := services.Config.LookupSource(source); !ok {
-			log.Printf("Announcing new group discovered: %s %s", source, group.GroupName)
 			announce(source, group.GroupName)
 		}
 	}
+
+	self.devices = devices
+	self.groups = groups
+
 	return len(devices), len(groups)
 }
 
@@ -207,11 +247,9 @@ func (self *Service) Run() error {
 	self.client.SavePSK()
 
 	commandChannel := services.Subscriber.FilteredChannel("command")
-	self.devices = map[int]*tradfri.DeviceDescription{}
-	self.groups = map[int]*tradfri.GroupDescription{}
 	self.discover()
-	// Rescan for new devices every hour
-	autoDiscover := time.Tick(60 * time.Minute)
+	// Rescan for new devices every 5 minutes
+	autoDiscover := time.Tick(5 * time.Minute)
 
 	for {
 		select {
