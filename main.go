@@ -37,6 +37,7 @@ type Config struct {
 	}
 }
 
+const DefaultDuration = 500 // ms
 var reHexCode = regexp.MustCompile(`^#[0-9a-f]{6}$`)
 
 func (self *Service) handleCommand(ev *pubsub.Event) {
@@ -55,7 +56,7 @@ func (self *Service) handleCommand(ev *pubsub.Event) {
 	group := id&(1<<17) != 0
 	var s string
 
-	ms := 500
+	ms := DefaultDuration
 	if _, ok := ev.Fields["duration"]; ok {
 		ms = int(ev.IntField("duration"))
 	}
@@ -92,9 +93,18 @@ func (self *Service) handleCommand(ev *pubsub.Event) {
 		}
 	case "off":
 		s = "off"
-		power := 0
-		change := tradfri.LightControl{Power: &power}
-		change.Duration = &duration
+		change := tradfri.LightControl{}
+		if ms != DefaultDuration {
+			// tradfri lights can't dim off with a duration, but can dim to 0
+			// with a duration. They stay as "power: 1", so we fix this up
+			// when reading their current status too. Yucky.
+			dim := 0
+			change.Dim = &dim
+			change.Duration = &duration
+		} else {
+			power := 0
+			change.Power = &power
+		}
 		if group {
 			self.client.SetGroup(id, change)
 		} else {
@@ -115,11 +125,11 @@ func (self *Service) handleCommand(ev *pubsub.Event) {
 	}
 }
 
-func numCommand(i int) string {
-	if i == 1 {
-		return "on"
+func numCommand(power int, dim int) string {
+	if power == 0 || tradfri.DimToPercentage(dim) == 0 {
+		return "off"
 	}
-	return "off"
+	return "on"
 }
 
 func deviceSource(device *tradfri.DeviceDescription) string {
@@ -134,7 +144,7 @@ func deviceAck(d *tradfri.DeviceDescription) {
 	lc := d.LightControl[0]
 	fields := pubsub.Fields{
 		"source":  deviceSource(d),
-		"command": numCommand(*lc.Power),
+		"command": numCommand(*lc.Power, *lc.Dim),
 		"level":   tradfri.DimToPercentage(*lc.Dim),
 		"temp":    tradfri.MiredToKelvin(*lc.Mireds),
 	}
@@ -146,7 +156,7 @@ func deviceAck(d *tradfri.DeviceDescription) {
 func groupAck(d *tradfri.GroupDescription) {
 	fields := pubsub.Fields{
 		"source":  groupSource(d),
-		"command": numCommand(d.Power),
+		"command": numCommand(d.Power, d.Dim),
 		"level":   d.Dim,
 	}
 	ack := pubsub.NewEvent("ack", fields)
@@ -171,7 +181,16 @@ func deviceChanged(a *tradfri.DeviceDescription, b *tradfri.DeviceDescription) b
 	}
 	la := a.LightControl[0]
 	lb := b.LightControl[0]
-	return *la.Power != *lb.Power || *la.Dim != *lb.Dim || *la.Mireds != *lb.Mireds
+	pa := *la.Power
+	// tradfri lights be set to power=1 dim=0, but really they're off.
+	if tradfri.DimToPercentage(*la.Dim) == 0 {
+		pa = 0
+	}
+	pb := *lb.Power
+	if tradfri.DimToPercentage(*lb.Dim) == 0 {
+		pb = 0
+	}
+	return pa != pb || *la.Dim != *lb.Dim || *la.Mireds != *lb.Mireds
 }
 
 func (self *Service) discover() (int, int) {
