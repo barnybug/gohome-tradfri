@@ -42,8 +42,8 @@ var reHexCode = regexp.MustCompile(`^#[0-9a-f]{6}$`)
 
 func (self *Service) handleCommand(ev *pubsub.Event) {
 	dev := ev.Device()
-	pids := services.Config.LookupDeviceProtocol(dev)
-	if pids["tradfri"] == "" {
+	ident, ok := services.Config.LookupDeviceProtocol(dev, "tradfri")
+	if !ok {
 		return // command not for us
 	}
 	command := ev.Command()
@@ -52,7 +52,7 @@ func (self *Service) handleCommand(ev *pubsub.Event) {
 		return
 	}
 
-	id, _ := strconv.Atoi(pids["tradfri"])
+	id, _ := strconv.Atoi(ident)
 	group := id&(1<<17) != 0
 	var s string
 
