@@ -174,6 +174,10 @@ func announce(source, name string) {
 	services.Publisher.Emit(ev)
 }
 
+func equalsIntPtr(p1 *int, p2 *int) bool {
+	return (p1 != nil && p2 != nil && *p1 == *p2) || (p1 == nil && p2 == nil)
+}
+
 func deviceChanged(a *tradfri.DeviceDescription, b *tradfri.DeviceDescription) bool {
 	if len(a.LightControl) == 0 || len(b.LightControl) == 0 {
 		// remote control
@@ -190,7 +194,7 @@ func deviceChanged(a *tradfri.DeviceDescription, b *tradfri.DeviceDescription) b
 	if tradfri.DimToPercentage(*lb.Dim) == 0 {
 		pb = 0
 	}
-	return pa != pb || *la.Dim != *lb.Dim || *la.Mireds != *lb.Mireds
+	return pa != pb || !equalsIntPtr(la.Dim, lb.Dim) || !equalsIntPtr(la.Mireds, lb.Mireds)
 }
 
 func (self *Service) discover() (int, int) {
