@@ -61,55 +61,76 @@ func (self *Service) handleCommand(ev *pubsub.Event) {
 		ms = int(ev.IntField("duration"))
 	}
 	duration := tradfri.MsToDuration(ms)
+	power := 1
+	change := tradfri.LightControl{}
+	colour := ev.StringField("colour")
+	levelSet := ev.IsSet("level")
+	level := int(ev.IntField("level"))
+	temp := int(ev.IntField("temp"))
+
+	// most parameters can be set with the lights off, to take effect when
+	// they are next turned on.
+	if colour != "" {
+		if reHexCode.MatchString(colour) {
+			colour = colour[1:]
+			x, y, dim, err := tradfri.RGBToColorXYDim(colour)
+			if err != nil {
+				log.Println("Invalid colour: %s", err)
+			} else {
+				change.ColorX = &x
+				change.ColorY = &y
+				change.Dim = &dim
+				s += fmt.Sprintf(" colour %s", colour)
+			}
+		} else {
+			log.Println("Invalid hex code for colour:", colour)
+		}
+	}
 
 	switch ev.Command() {
 	case "on":
 		s = "on"
-		power := 1
-		change := tradfri.LightControl{Power: &power}
-		level := int(ev.IntField("level"))
-		if level != 0 {
-			dim := tradfri.PercentageToDim(level)
-			change.Dim = &dim
-			s += fmt.Sprintf(" level %d%%", level)
-		}
-		colour := ev.StringField("colour")
-		if reHexCode.MatchString(colour) {
-			colour = colour[1:]
-			change.Color = &colour
-			s += fmt.Sprintf(" colour %s", colour)
-		}
-		temp := int(ev.IntField("temp"))
-		if temp != 0 {
-			mired := tradfri.KelvinToMired(temp)
-			change.Mireds = &mired
-			s += fmt.Sprintf(" temp %dK", temp)
-		}
-		change.Duration = &duration
-		if group {
-			self.client.SetGroup(id, change)
-		} else {
-			self.client.SetDevice(id, change)
-		}
 	case "off":
 		s = "off"
-		change := tradfri.LightControl{}
 		if ms != DefaultDuration {
 			// tradfri lights can't dim off with a duration, but can dim to 0
 			// with a duration. They stay as "power: 1", so we fix this up
 			// when reading their current status too. Yucky.
-			dim := 0
-			change.Dim = &dim
-			change.Duration = &duration
+			levelSet = true
+			level = 0
 		} else {
-			power := 0
-			change.Power = &power
+			power = 0
 		}
+		if level > 50 {
+			level = 50
+		}
+		change.Dim = nil
+
 		if group {
 			self.client.SetGroup(id, change)
 		} else {
 			self.client.SetDevice(id, change)
 		}
+	}
+
+	if levelSet {
+		dim := tradfri.PercentageToDim(level)
+		change.Dim = &dim
+		s += fmt.Sprintf(" level %d%%", level)
+	}
+	if temp != 0 {
+		mired := tradfri.KelvinToMired(temp)
+		change.Mireds = &mired
+		s += fmt.Sprintf(" temp %dK", temp)
+	}
+
+	change.Power = &power
+	change.Duration = &duration
+
+	if group {
+		self.client.SetGroup(id, change)
+	} else {
+		self.client.SetDevice(id, change)
 	}
 
 	if group {
@@ -145,9 +166,26 @@ func deviceAck(d *tradfri.DeviceDescription) {
 	fields := pubsub.Fields{
 		"source":  deviceSource(d),
 		"command": numCommand(*lc.Power, *lc.Dim),
-		"level":   tradfri.DimToPercentage(*lc.Dim),
-		"temp":    tradfri.MiredToKelvin(*lc.Mireds),
 	}
+	if lc.Dim != nil {
+		fields["level"] = tradfri.DimToPercentage(*lc.Dim)
+	}
+	if lc.Mireds != nil {
+		fields["temp"] = tradfri.MiredToKelvin(*lc.Mireds)
+	}
+	if lc.ColorX != nil {
+		fields["colorX"] = *lc.ColorX
+	}
+	if lc.ColorY != nil {
+		fields["colorY"] = *lc.ColorY
+	}
+	if lc.ColorHue != nil {
+		fields["hue"] = *lc.ColorHue
+	}
+	if lc.ColorSat != nil {
+		fields["sat"] = *lc.ColorSat
+	}
+
 	ack := pubsub.NewEvent("ack", fields)
 	services.Config.AddDeviceToEvent(ack)
 	services.Publisher.Emit(ack)
