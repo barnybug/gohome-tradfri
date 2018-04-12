@@ -73,9 +73,9 @@ func (self *Service) handleCommand(ev *pubsub.Event) {
 	if colour != "" {
 		if reHexCode.MatchString(colour) {
 			colour = colour[1:]
-			x, y, dim, err := tradfri.RGBToColorXYDim(colour)
+			x, y, dim, err := tradfri.HexRGBToColorXYDim(colour)
 			if err != nil {
-				log.Println("Invalid colour: %s", err)
+				log.Printf("Invalid colour: %s", err)
 			} else {
 				change.ColorX = &x
 				change.ColorY = &y
@@ -119,9 +119,18 @@ func (self *Service) handleCommand(ev *pubsub.Event) {
 		s += fmt.Sprintf(" level %d%%", level)
 	}
 	if temp != 0 {
-		mired := tradfri.KelvinToMired(temp)
-		change.Mireds = &mired
-		s += fmt.Sprintf(" temp %dK", temp)
+		if d, ok := self.devices[id]; ok && !d.SupportsMired() {
+			x, y, dim := tradfri.KelvinToColorXYDim(temp)
+			change.ColorX = &x
+			change.ColorY = &y
+			change.Dim = &dim
+			s += fmt.Sprintf(" temp' %dK", temp)
+		} else {
+			mired := tradfri.KelvinToMired(temp)
+			change.Mireds = &mired
+			s += fmt.Sprintf(" temp %dK", temp)
+		}
+
 	}
 
 	change.Power = &power
