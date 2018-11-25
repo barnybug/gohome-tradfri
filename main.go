@@ -123,7 +123,9 @@ func (self *Service) handleCommand(ev *pubsub.Event) {
 			x, y, dim := tradfri.KelvinToColorXYDim(temp)
 			change.ColorX = &x
 			change.ColorY = &y
-			change.Dim = &dim
+			if !levelSet {
+				change.Dim = &dim
+			}
 			s += fmt.Sprintf(" temp' %dK", temp)
 		} else {
 			mired := tradfri.KelvinToMired(temp)
