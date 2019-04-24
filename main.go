@@ -13,12 +13,10 @@ import (
 	tradfri "github.com/barnybug/go-tradfri"
 	"github.com/barnybug/gohome/pubsub"
 	"github.com/barnybug/gohome/services"
-	"github.com/edgard/yeelight"
 )
 
 // Service tradfri
 type Service struct {
-	lights  map[string]*yeelight.Light
 	config  Config
 	client  *tradfri.Client
 	devices map[int]*tradfri.DeviceDescription
@@ -37,7 +35,7 @@ type Config struct {
 	}
 }
 
-const DefaultDuration = 500 // ms
+const defaultDuration = 500 // ms
 var reHexCode = regexp.MustCompile(`^#[0-9a-f]{6}$`)
 
 func (self *Service) handleCommand(ev *pubsub.Event) {
@@ -56,7 +54,7 @@ func (self *Service) handleCommand(ev *pubsub.Event) {
 	group := id&(1<<17) != 0
 	var s string
 
-	ms := DefaultDuration
+	ms := defaultDuration
 	if _, ok := ev.Fields["duration"]; ok {
 		ms = int(ev.IntField("duration"))
 	}
@@ -92,7 +90,7 @@ func (self *Service) handleCommand(ev *pubsub.Event) {
 		s = "on"
 	case "off":
 		s = "off"
-		if ms != DefaultDuration {
+		if ms != defaultDuration {
 			// tradfri lights can't dim off with a duration, but can dim to 0
 			// with a duration. They stay as "power: 1", so we fix this up
 			// when reading their current status too. Yucky.
@@ -335,7 +333,7 @@ func (self *Service) Run() error {
 }
 
 func main() {
-	services.Setup()
+	services.Setup("tradfri")
 	services.Register(&Service{})
 	services.Launch([]string{"tradfri"})
 }
