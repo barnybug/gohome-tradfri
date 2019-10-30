@@ -1,6 +1,7 @@
 github.com/Knetic/govaluate v3.0.0+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
 github.com/RangelReale/osin v1.0.1/go.mod h1:k/PH1SjZDitJDtK3zHm/XZRi+bRz6i3rhx9qE9p54CY=
 github.com/barnybug/ener314 v0.0.0-20170310204508-64f8fd2e5639/go.mod h1:ff9EL/0HUSbNGMqNkXG5Ft8C/KfSv42X7XqSw3knVh4=
+github.com/barnybug/go-broadlink v0.0.0-20191017075455-9262f4fc8488/go.mod h1:s+R3fRJqOn5iJM0CQTman7cszrTxqaUKUow5uyLTXFQ=
 github.com/barnybug/go-cast v0.0.0-20170213204855-3896d2c05eb1/go.mod h1:a0BMCP1cILkrVyN1md3tv0IH3NMelzmBKHHPSDNLyFs=
 github.com/barnybug/go-cast v0.0.0-20181026143840-5be61902f818/go.mod h1:a0BMCP1cILkrVyN1md3tv0IH3NMelzmBKHHPSDNLyFs=
 github.com/barnybug/go-tradfri v0.0.0-20190510202758-d0899418a947 h1:w3nFt6VIqbKwdWrq60hVNJy1lnOsKIA0Vb0IibUdt9o=
@@ -17,6 +18,10 @@ github.com/barnybug/gohome v0.0.0-20190913184046-59ba6e76d456 h1:JWoCi4uRBPLiuDa
 github.com/barnybug/gohome v0.0.0-20190913184046-59ba6e76d456/go.mod h1:NxG4vcdClnx5qj3KH4w8wXqebwVuadoX+Tq/MD82TMc=
 github.com/barnybug/gohome v0.0.0-20191004164518-2f2f3a26612f h1:316zRP5tnf0mM7bItCeBbtGnkQFGs8DqQju6tU2XGsE=
 github.com/barnybug/gohome v0.0.0-20191004164518-2f2f3a26612f/go.mod h1:POLvuoyWFXQuz6H/ukkVk9IefOtVIEyWgWe5SPsR3nE=
+github.com/barnybug/gohome v0.0.0-20191007063642-e7de552e092c h1:97gYMS152sNza9/z4psl5cASHvrEJproEVBsE7C5QVE=
+github.com/barnybug/gohome v0.0.0-20191007063642-e7de552e092c/go.mod h1:POLvuoyWFXQuz6H/ukkVk9IefOtVIEyWgWe5SPsR3nE=
+github.com/barnybug/gohome v0.0.0-20191030171518-f6de0dfad73f h1:+uszf3K6DeppVgluHcDPEb2oA/L06sY+I3s/VWSBigk=
+github.com/barnybug/gohome v0.0.0-20191030171518-f6de0dfad73f/go.mod h1:3Stg/XdMNPWTJIXn4OF9BKRz1YTxruvkgveiZMPi2z0=
 github.com/barnybug/gorfxtrx v0.0.0-20190313200345-fab70020949d/go.mod h1:vGfufSVvFEDxZNel47pRC8PjecRw9zMT4i0wEJzFRyc=
 github.com/barnybug/gorfxtrx v0.0.0-20190905200316-0c4514bd3ca7/go.mod h1:vkgXls79dfeUXi50lYE9jjLCJPzTRdmpOGuujU6Rsjg=
 github.com/barnybug/miflora v0.0.0-20190206202408-36c55fde159f/go.mod h1:emo0XuZuFlREoK2Lyqk4xHboCs3O+4FwihWwP0tHwuU=

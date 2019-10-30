@@ -7,7 +7,7 @@ require (
 	github.com/barnybug/go-tradfri v0.0.0-20190510202758-d0899418a947
 	github.com/barnybug/gofsm v0.0.0-20181230212641-1a458869bfdb // indirect
 	github.com/barnybug/gogsmmodem v0.0.0-20180823201430-c663385185b4 // indirect
-	github.com/barnybug/gohome v0.0.0-20191004164518-2f2f3a26612f
+	github.com/barnybug/gohome v0.0.0-20191030171518-f6de0dfad73f
 	github.com/bocajim/dtls v0.0.0-20190528173046-23e2f20d5f89 // indirect
 	github.com/dustin/go-coap v0.0.0-20190908170653-752e0f79981e // indirect
 	github.com/eclipse/paho.mqtt.golang v1.2.0 // indirect
@@ -28,7 +28,6 @@ require (
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
-	github.com/stretchr/testify v1.4.0 // indirect
 	golang.org/x/crypto v0.0.0-20190907121410-71b5226ff739 // indirect
 	golang.org/x/net v0.0.0-20190909003024-a7b16738d86b // indirect
 	golang.org/x/sys v0.0.0-20190907184412-d223b2b6db03 // indirect

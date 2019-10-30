@@ -300,7 +300,7 @@ func (self *Service) loadConfig() error {
 	return err
 }
 
-func (self *Service) Run() error {
+func (self *Service) Init() error {
 	if err := self.loadConfig(); err != nil {
 		return err
 	}
@@ -315,7 +315,10 @@ func (self *Service) Run() error {
 		return err
 	}
 	self.client.SavePSK()
+	return nil
+}
 
+func (self *Service) Run() error {
 	commandChannel := services.Subscriber.FilteredChannel("command")
 	self.discover()
 	// Rescan for new devices every 5 minutes
